@@ -7,6 +7,9 @@ var AddressSchema = new Schema({
   received: { type: Number, default: 0 },
   sent: { type: Number, default: 0 },
   balance: {type: Number, default: 0},
+  transaction: {type: Number, default: 0},
+  Incoming: {type: Number, default: 0},
+  Outgoing: {type: Number, default: 0},
 }, {id: false});
 
 module.exports = mongoose.model('Address', AddressSchema);
