@@ -8,8 +8,8 @@ var AddressSchema = new Schema({
   sent: { type: Number, default: 0 },
   balance: {type: Number, default: 0},
   transaction: {type: Number, default: 0},
-  Incoming: {type: Number, default: 0},
-  Outgoing: {type: Number, default: 0},
+  incoming: {type: Number, default: 0},
+  outgoing: {type: Number, default: 0},
 }, {id: false});
 
 module.exports = mongoose.model('Address', AddressSchema);
