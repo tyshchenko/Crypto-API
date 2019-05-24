@@ -112,11 +112,6 @@ function exit() {
   });
 }
 
-// var dbString = 'mongodb://' + settings.dbsettings.user;
-// dbString = dbString + ':' + settings.dbsettings.password;
-// dbString = dbString + '@' + settings.dbsettings.address;
-// dbString = dbString + ':' + settings.dbsettings.port;
-// dbString = dbString + '/' + settings.dbsettings.database;
 
 is_locked(function (exists) {
   if (exists) {
@@ -126,81 +121,73 @@ is_locked(function (exists) {
     create_lock(function (){
       console.log("script launched with pid: " + process.pid);
       Promise.all(settings.coin.map(i => {
-        var dbString = 'mongodb://' + settings.dbsettings.user;
-        dbString = dbString + ':' + settings.dbsettings.password;
-        dbString = dbString + '@' + settings.dbsettings.address;
-        dbString = dbString + ':' + settings.dbsettings.port;
-        dbString = dbString + '/' + i.coin;
-        mongoose.connect(dbString, function(err) {
-          if (err) {
-            console.log('Unable to connect to database: %s', dbString);
-            console.log('Aborting');
-            exit();
-          } else if (database == 'index') {
-            db.check_stats(i.coin).then((exists) =>{
-              if (exists == false) {
-                console.log('Run \'npm start\' to create database structures before running this script.');
-                exit();
-              } else {
-                // console.log('here sync line 140')
-                db.update_db(i.coin).then(()=>{
-                  db.get_stats(i.coin).then((stats)=>{
-                    // console.log(stats.block_height + 'line 143')
-                    if (mode == 'reindex') {
-                      Tx.remove({}, function(err) {
-                        Address.remove({}, function(err2) {
-                          Richlist.update({coin: i.coin},
-                              {$set: {
-                                  received: [],
-                                  balance: [],
-                                }}, function(err3) {
-                                // console.log('line 152')
-                                Stats.update({coin: i.coin},
-                                    {$set: {
-                                        last: 0,
-                                      }}, function() {
-                                      console.log('index cleared (reindex)');
-                                    });
-                                db.update_tx_db(i.coin, 1, stats.block_height, i.update_timeout, function(){
-                                  db.update_richlist('received').then(()=>{
-                                    db.update_richlist('balance').then(()=>{
-                                      db.get_stats(settings.coin).then((nstats)=>{
-                                        console.log('reindex complete (block: %s)', nstats.last);
-                                        exit();
-                                      });
-                                    });
-                                  });
-                                });
-                              });
-                        });
-                      });
-                    } else if (mode == 'check') {
-                      db.update_tx_db(i.coin, 1, stats.block_height, i.check_timeout, function(){
-                        db.get_stats(i.coin).then((nstats)=>{
-                          console.log('check complete (block: %s)', nstats.last);
-                          exit();
-                        });
-                      });
-                    } else if (mode == 'update') {
-                      db.update_tx_db(i.coin, stats.last, stats.block_height, i.update_timeout, function(){
-                        db.update_richlist('received').then(()=>{
-                          db.update_richlist('balance').then(()=>{
-                            db.get_stats(i.coin).then((nstats)=>{
-                              console.log('update complete (block: %s)', nstats.last);
-                              exit();
-                            });
-                          });
-                        });
-                      });
+        db.connect(i.name).then((conn)=>{
+            if (database == 'index') {
+                db.check_stats(conn, i.name).then((exists) =>{
+                    if (exists == false) {
+                        console.log('Run \'npm start\' to create database structures before running this script.');
+                        exit();
                     } else {
-                      exit();
+                        db.update_db(conn, i.name).then(()=>{
+                            db.get_stats(conn, i.name).then((stats)=>{
+                                if (mode == 'reindex') {
+                                    var Stats_Model = Stats(conn)
+                                    var Tx_Model = Tx(conn);
+                                    var Address_Model = Address(conn);
+                                    var Richlist_Model = Richlist(conn)
+                                    Tx_Model.remove({}, function(err) {
+                                        Address_Model.remove({}, function(err2) {
+                                            Richlist_Model.update({coin: i.name},
+                                                {$set: {
+                                                        received: [],
+                                                        balance: [],
+                                                    }}, function(err3) {
+                                                    Stats_Model.update({coin: i.name},
+                                                        {$set: {
+                                                                last: 0,
+                                                            }}, function() {
+                                                            console.log('index cleared (reindex)');
+                                                        });
+                                                    db.update_tx_db(conn, i.name, 1, stats.block_height, i.update_timeout, function(){
+                                                        db.update_richlist(conn, coin,'received').then(()=>{
+                                                            db.update_richlist(conn, coin,'balance').then(()=>{
+                                                                db.get_stats(conn, i.name).then((nstats)=>{
+                                                                    console.log('reindex complete (block: %s)', nstats.last);
+                                                                    exit();
+                                                                });
+                                                            });
+                                                        });
+                                                    });
+                                                });
+                                        });
+                                    });
+                                } else if (mode == 'check') {
+                                    db.update_tx_db(conn, i.name, 1, stats.block_height, i.check_timeout, function(){
+                                        db.get_stats(conn, i.name).then((nstats)=>{
+                                            console.log('check complete (block: %s)', nstats.last);
+                                            exit();
+                                        });
+                                    });
+                                } else if (mode == 'update') {
+                                    db.update_tx_db(conn, i.name, stats.last, stats.block_height, i.update_timeout, function(){
+                                        db.update_richlist(conn, coin,'received').then(()=>{
+                                            db.update_richlist(conn, coin,'balance').then(()=>{
+                                                db.get_stats(conn, i.name).then((nstats)=>{
+                                                    console.log('update complete (block: %s)', nstats.last);
+                                                    exit();
+                                                });
+                                            });
+                                        });
+                                    });
+                                } else {
+                                    exit();
+                                }
+                            });
+                        });
                     }
-                  });
                 });
-              }
-            });
-          }
-        });
+            }
+        })
       }))
     });
   }
