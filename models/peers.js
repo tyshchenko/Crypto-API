@@ -9,4 +9,4 @@ var PeersSchema = new Schema({
   country: { type: String, default: "" }
 });
 
-module.exports = mongoose.model('Peers', PeersSchema);
+module.exports = (conn) => conn.model('Peers', PeersSchema);

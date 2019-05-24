@@ -11,4 +11,4 @@ var TxSchema = new Schema({
   blockindex: {type: Number, default: 0},
 }, {id: false});
 
-module.exports = mongoose.model('Tx', TxSchema);
+module.exports = (conn) => conn.model('Tx', TxSchema);

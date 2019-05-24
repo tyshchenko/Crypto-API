@@ -7,4 +7,4 @@ var RichlistSchema = new Schema({
   balance: { type: Array, default: [] },
 });
 
-module.exports = mongoose.model('Richlist', RichlistSchema);
+module.exports = (conn) => conn.model('Richlist', RichlistSchema);

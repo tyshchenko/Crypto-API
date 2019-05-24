@@ -12,5 +12,5 @@ var AddressSchema = new Schema({
   outgoing: {type: Number, default: 0},
 }, {id: false});
 
-module.exports = mongoose.model('Address', AddressSchema);
+module.exports = (conn) => conn.model('Address', AddressSchema);
 
