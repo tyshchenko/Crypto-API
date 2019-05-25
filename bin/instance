@@ -9,9 +9,7 @@ var routes = require('../routes/index');
 app.set('port', process.env.PORT || settings.port);
 
 Promise.all(settings.coin.map(i=>{
-    db.connect(i.name).then((conn) =>{
-        return ({coin: i.name, conn: conn})
-    })
+    db.connect(i.name)
 })).then(arrayOfConn =>{
     app.use('/', routes(arrayOfConn));
     arrayOfConn.map(i => {
