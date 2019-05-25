@@ -8,49 +8,50 @@ var routes = require('../routes/index');
 
 app.set('port', process.env.PORT || settings.port);
 
-Promise.all(settings.coin.map(i=>{
-    db.connect(i.name)
-})).then(arrayOfConn =>{
-    app.use('/', routes(arrayOfConn));
-    arrayOfConn.map(i => {
-        db.check_stats(i.conn, i.coin).then((exists) =>{
-            if (exists == false) {
-                console.log('no stats entry found, creating now..');
-                db.create_stats(i.conn, i.coin).then(()=>{});
-            } else {}
-        });
-        db.check_richlist(i.conn, i.coin).then((exists)=>{
-            if (exists == false) {
-                console.log('no richlist entry found, creating now..');
-                db.create_richlist(i.conn, i.coin).then(() =>{});
-            }
-        });
-    })
-}).then(()=>{
-    app.listen(app.get('port'), function() {
-        debug('Express server listening on port ' + settings.port);
-    });
-})
-
 // Promise.all(settings.coin.map(i=>{
-//   db.connect(i.name).then((conn) =>{
-//     app.use(`/${i.name}/`, routes(conn, i.name))
-//     db.check_stats(conn, i.name).then((exists) =>{
-//       if (exists == false) {
-//         console.log('no stats entry found, creating now..');
-//         db.create_stats(conn, i.name).then(()=>{});
-//       } else {}
+//     db.connect(i.name)
+// })).then(arrayOfConn =>{
+//     // console.log(arrayOfConn);
+//     // app.use('/', routes(arrayOfConn));
+//     Promise.all(arrayOfConn.map(i => {
+//         db.check_stats(i.conn, i.coin).then((exists) =>{
+//             if (exists == false) {
+//                 console.log('no stats entry found, creating now..');
+//                 db.create_stats(i.conn, i.coin).then(()=>{});
+//             } else {}
+//         });
+//         db.check_richlist(i.conn, i.coin).then((exists)=>{
+//             if (exists == false) {
+//                 console.log('no richlist entry found, creating now..');
+//                 db.create_richlist(i.conn, i.coin).then(() =>{});
+//             }
+//         });
+//     })).then(()=>{})
+// }).then(()=>{
+//     app.listen(app.get('port'), function() {
+//         debug('Express server listening on port ' + settings.port);
 //     });
-//     db.check_richlist(conn, i.name).then((exists)=>{
-//       if (exists == false) {
-//         console.log('no richlist entry found, creating now..');
-//         db.create_richlist(conn, i.name).then(() =>{});
-//       }
-//     });
-//   }).then((conn)=>{return ({coin: i.name, conn: conn}))
-// })).then(()=>{
-//   app.listen(app.get('port'), function() {
-//     debug('Express server listening on port ' + settings.port);
-//   });
 // })
+
+Promise.all(settings.coin.map(i=>{
+  db.connect(i.name).then((conn) =>{
+    // app.use(`/${i.name}/`, routes(conn, i.name))
+    db.check_stats(conn, i.name).then((exists) =>{
+      if (exists == false) {
+        console.log('no stats entry found, creating now..');
+        db.create_stats(conn, i.name).then(()=>{});
+      } else {}
+    });
+    db.check_richlist(conn, i.name).then((exists)=>{
+      if (exists == false) {
+        console.log('no richlist entry found, creating now..');
+        db.create_richlist(conn, i.name).then(() =>{});
+      }
+    });
+  })
+})).then(()=>{
+  app.listen(app.get('port'), function() {
+    debug('Express server listening on port ' + settings.port);
+  });
+})
 
