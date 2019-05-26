@@ -121,8 +121,8 @@ is_locked(function (exists) {
     create_lock(function (){
       console.log("script launched with pid: " + process.pid);
       Promise.all(settings.coin.map(i => {
-        db.connect(i.name).then((conn)=>{
-            // var conn = data.conn;
+        db.connect(i.name).then((data)=>{
+            var conn = data.conn;
             if (database == 'index') {
                 db.check_stats(conn, i.name).then((exists) =>{
                     if (exists == false) {

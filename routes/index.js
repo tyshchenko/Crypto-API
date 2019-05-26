@@ -1,148 +1,186 @@
 var express = require('express')
-  , router = express.Router()
-  , settings = require('../lib/settings')
-  , locale = require('../lib/locale')
-  , db = require('../lib/database')
-  , lib = require('../lib/explorer')
-  , qr = require('qr-image');
+var router = express.Router()
+var settings = require('../lib/settings')
+var db = require('../lib/database')
+var lib = require('../lib/explorer')
 
 function route_get_block(conn, res, coin, blockhash) {
-  lib.get._block(coin, blockhash).then((block) =>{
-    if (block != 'There was an error. Check your console.') {
-      if (blockhash == settings.genesis_block) {
-        res.status(200).json({block: block, txs: 'GENESIS'});
-      } else {
-        db.get_txs(conn, block).then((txs) =>{
-          if (txs.length > 0) {
-            res.status(200).json({txs: txs});
-          } else {
-            db.create_txs(conn, coin, block).then(()=>{
-              db.get_txs(conn, block).then((ntxs) =>{
-                if (ntxs.length > 0) {
-                  res.status(200).json({ txs: ntxs});
+    lib.get._block(coin, blockhash).then((block) =>{
+        if (block != 'There was an error. Check your console.') {
+            if (blockhash == settings.genesis_block) {
+                res.status(200).json({block: block, txs: 'GENESIS'});
+            } else {
+                db.get_txs(conn, block).then((txs) =>{
+                    if (txs.length > 0) {
+                        res.status(200).json({txs: txs});
+                    } else {
+                        db.create_txs(conn, coin, block).then(()=>{
+                            db.get_txs(conn, block).then((ntxs) =>{
+                                if (ntxs.length > 0) {
+                                    res.status(200).json({ txs: ntxs});
+                                } else {
+                                    res.status(404).send('Block not found!')
+                                }
+                            });
+                        });
+                    }
+                });
+            }
+        } else {
+            res.status(404).send('Block not found!')
+        }
+    });
+}
+function route_get_tx(conn, res, coin, txid) {
+  db.get_tx(conn, txid).then((tx) =>{
+    if (tx) {
+      lib.get._blockcount(coin).then((blockcount) =>{
+        res.status(200).json({tx: tx, blockcount: blockcount});
+      });
+    }
+    else {
+      lib.get._rawtransaction(coin, txid).then((rtx) =>{
+        if (rtx.txid) {
+          lib.prepare_vin(coin, rtx, function(vin) {
+            lib.prepare_vout(rtx.vout, rtx.txid, vin, function(rvout, rvin) {
+              lib.calculate_total(rvout).then((total)=>{
+                if (!rtx.confirmations > 0) {
+                  var utx = {
+                    txid: rtx.txid,
+                    vin: rvin,
+                    vout: rvout,
+                    total: total.toFixed(8),
+                    timestamp: rtx.time,
+                    blockhash: '-',
+                    blockindex: -1,
+                  };
+                  res.status(200).json({tx: utx, confirmations: settings.confirmations, blockcount:-1});
                 } else {
-                  res.status(404).send('Block not found!')
+                  var utx = {
+                    txid: rtx.txid,
+                    vin: rvin,
+                    vout: rvout,
+                    total: total.toFixed(8),
+                    timestamp: rtx.time,
+                    blockhash: rtx.blockhash,
+                    blockindex: rtx.blockheight,
+                  };
+                  lib.get._blockcount(coin).then((blockcount) =>{
+                    res.status(200).json({tx: utx, confirmations: settings.confirmations, blockcount: blockcount});
+                  });
                 }
               });
             });
-          }
-        });
-      }
-    } else {
-      res.status(404).send('Block not found!')
+          });
+        } else {
+          res.status(200).send('null')
+        }
+      });
     }
   });
 }
-/* GET functions */
+function route_get_address(conn, res, coin, hash, count) {
+  db.get_address(conn, hash, function(address) {
+    if (address) {
+      var txs = [];
+      var hashes = address.txs.reverse();
+      if (address.txs.length < count) {
+        count = address.txs.length;
+      }
+      lib.syncLoop(count, function (loop) {
+        var i = loop.iteration();
+        db.get_tx(conn, hashes[i].addresses, function(tx) {
+          if (tx) {
+            txs.push(tx);
+            loop.next();
+          } else {
+            loop.next();
+          }
+        });
+      }, function(){
+        res.status(200).json({address: address, txs: txs});
+      });
 
-// function route_get_tx(conn, res, coin, txid) {
-//   db.get_tx(conn, txid).then((tx) =>{
-//     if (tx) {
-//       lib.get._blockcount(coin).then((blockcount) =>{
-//         res.status(200).json({tx: tx, blockcount: blockcount});
-//       });
-//     }
-//     else {
-//       lib.get._rawtransaction(coin, txid).then((rtx) =>{
-//         if (rtx.txid) {
-//           lib.prepare_vin(coin, rtx, function(vin) {
-//             lib.prepare_vout(rtx.vout, rtx.txid, vin, function(rvout, rvin) {
-//               lib.calculate_total(rvout).then((total)=>{
-//                 if (!rtx.confirmations > 0) {
-//                   var utx = {
-//                     txid: rtx.txid,
-//                     vin: rvin,
-//                     vout: rvout,
-//                     total: total.toFixed(8),
-//                     timestamp: rtx.time,
-//                     blockhash: '-',
-//                     blockindex: -1,
-//                   };
-//                   res.status(200).json({tx: utx, confirmations: settings.confirmations, blockcount:-1});
-//                 } else {
-//                   var utx = {
-//                     txid: rtx.txid,
-//                     vin: rvin,
-//                     vout: rvout,
-//                     total: total.toFixed(8),
-//                     timestamp: rtx.time,
-//                     blockhash: rtx.blockhash,
-//                     blockindex: rtx.blockheight,
-//                   };
-//                   lib.get._blockcount(coin).then((blockcount) =>{
-//                     res.status(200).json({tx: utx, confirmations: settings.confirmations, blockcount: blockcount});
-//                   });
-//                 }
-//               });
-//             });
-//           });
-//         } else {
-//           res.status(200).send('null')
-//         }
-//       });
-//     }
-//   });
-// }
-//
-// // function route_get_index(res, error) {
-// //   res.render('index', { active: 'home', error: error, warning: null});
-// // }
-//
-// function route_get_address(conn, res, coin, hash, count) {
-//   db.get_address(conn, hash, function(address) {
-//     console.log(address)
-//     if (address) {
-//       var txs = [];
-//       var hashes = address.txs.reverse();
-//       if (address.txs.length < count) {
-//         count = address.txs.length;
-//       }
-//       lib.syncLoop(count, function (loop) {
-//         var i = loop.iteration();
-//         db.get_tx(conn, hashes[i].addresses, function(tx) {
-//           if (tx) {
-//             txs.push(tx);
-//             loop.next();
-//           } else {
-//             loop.next();
-//           }
-//         });
-//       }, function(){
-//         res.status(200).json({address: address, txs: txs});
-//       });
-//
-//     } else {
-//       res.status(404).send(' not found');
-//     }
-//   });
-// }
+    } else {
+      res.status(404).send('Not found');
+    }
+  });
+}
+module.exports = (data) => new Promise((res, rej)=>{
+    var coin = data.coin
+    var conn = data.conn
+    router.get('/tx/:txid', (req, res)=>{
+        var txid = req.params.txid
+        if (coin == data.coin){
+            if (txid == settings.genesis_tx) {
+                route_get_block(conn, res, coin, settings.genesis_block);
+            } else {
+                db.get_tx(conn, txid).then((tx) =>{
+                    console.log('here')
+                    if (tx) {
+                        lib.get._blockcount(coin).then((blockcount) =>{
+                            res.status(200).json({tx: tx, blockcount: blockcount});
+                        });
+                    }
+                    else {
+                        lib.get._rawtransaction(coin, txid).then((rtx) =>{
+                            if (rtx.txid) {
+                                lib.prepare_vin(coin, rtx, function(vin) {
+                                    lib.prepare_vout(rtx.vout, rtx.txid, vin, function(rvout, rvin) {
+                                        lib.calculate_total(rvout).then((total)=>{
+                                            if (!rtx.confirmations > 0) {
+                                                var utx = {
+                                                    txid: rtx.txid,
+                                                    vin: rvin,
+                                                    vout: rvout,
+                                                    total: total.toFixed(8),
+                                                    timestamp: rtx.time,
+                                                    blockhash: '-',
+                                                    blockindex: -1,
+                                                };
+                                                res.status(200).json({tx: utx, confirmations: settings.confirmations, blockcount:-1});
+                                            } else {
+                                                var utx = {
+                                                    txid: rtx.txid,
+                                                    vin: rvin,
+                                                    vout: rvout,
+                                                    total: total.toFixed(8),
+                                                    timestamp: rtx.time,
+                                                    blockhash: rtx.blockhash,
+                                                    blockindex: rtx.blockheight,
+                                                };
+                                                lib.get._blockcount(coin).then((blockcount) =>{
+                                                    res.status(200).json({tx: utx, confirmations: settings.confirmations, blockcount: blockcount});
+                                                });
+                                            }
+                                        });
+                                    });
+                                });
+                            } else {
+                                res.status(200).send('null')
+                            }
+                        });
+                    }
+                });
+            }
+        }
+    })
+    router.get('/block/:hash', function(req, res) {
+        route_get_block(conn, res, coin, req.param('hash'));
+    });
 
-// router.get('/info', function(req, res) {
-//   res.render('info', { active: 'info', address: settings.address, hashes: settings.api });
-// });
+    router.get('/address/:hash', function(req, res) {
+        var hash = req.params.hash
+        console.log(hash)
+        route_get_address(conn, res, coin, hash, settings.txcount);
+    });
 
-// router.get('/markets/:market', function(req, res) {
-//   var market = req.params['market'];
-//   if (settings.markets.enabled.indexOf(market) != -1) {
-//     db.get_market(market, function(data) {
-//       /*if (market === 'bittrex') {
-//         data = JSON.parse(data);
-//       }*/
-//       console.log(data);
-//       res.render('./markets/' + market, {
-//         active: 'markets',
-//         marketdata: {
-//           coin: settings.markets.coin,
-//           exchange: settings.markets.exchange,
-//           data: data,
-//         },
-//         market: market
-//       });
-//     });
-//   } else {
-//     route_get_index(res, null);
-//   }
-// });
+    router.get('/address/:hash/:count', function(req, res) {
+        route_get_address(conn, res, coin, req.param('hash'), req.param('count'));
+    });
+    res(router)
+})
+
 
 // router.get('/richlist', function(req, res) {
 //   if (settings.display.richlist == true ) {
@@ -205,62 +243,8 @@ function route_get_block(conn, res, coin, blockhash) {
 //     });
 //   //});
 // });
-module.exports = (arrayOfConn) => {
-  router.get('/:coin/tx/:txid', function(req, res) {
-    var txid = req.params.txid
-    var coin = req.params.coin
-    var result = arrayOfConn.find(x => x.coin === coin);
-    if (txid == settings.genesis_tx) {
-      route_get_block(result.conn, res, result.coin, settings.genesis_block);
-    } else {
-      db.get_tx(result.conn, txid).then((tx) =>{
-        if (tx) {
-          lib.get._blockcount(coin).then((blockcount) =>{
-            res.status(200).json({tx: tx, blockcount: blockcount});
-          });
-        }
-        else {
-          lib.get._rawtransaction(coin, txid).then((rtx) =>{
-            if (rtx.txid) {
-              lib.prepare_vin(coin, rtx, function(vin) {
-                lib.prepare_vout(rtx.vout, rtx.txid, vin, function(rvout, rvin) {
-                  lib.calculate_total(rvout).then((total)=>{
-                    if (!rtx.confirmations > 0) {
-                      var utx = {
-                        txid: rtx.txid,
-                        vin: rvin,
-                        vout: rvout,
-                        total: total.toFixed(8),
-                        timestamp: rtx.time,
-                        blockhash: '-',
-                        blockindex: -1,
-                      };
-                      res.status(200).json({tx: utx, confirmations: settings.confirmations, blockcount:-1});
-                    } else {
-                      var utx = {
-                        txid: rtx.txid,
-                        vin: rvin,
-                        vout: rvout,
-                        total: total.toFixed(8),
-                        timestamp: rtx.time,
-                        blockhash: rtx.blockhash,
-                        blockindex: rtx.blockheight,
-                      };
-                      lib.get._blockcount(coin).then((blockcount) =>{
-                        res.status(200).json({tx: utx, confirmations: settings.confirmations, blockcount: blockcount});
-                      });
-                    }
-                  });
-                });
-              });
-            } else {
-              res.status(200).send('null')
-            }
-          });
-        }
-      });
-    }
-  });
+
+
 
 // router.get('/block/:hash', function(req, res) {
 //   route_get_block(res, req.param('hash'));
@@ -367,6 +351,7 @@ module.exports = (arrayOfConn) => {
 //     });
 //   });
 // });
-};
+
+
 
 
