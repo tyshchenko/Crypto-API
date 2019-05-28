@@ -43,32 +43,33 @@ app.use(bodyParser.urlencoded());
 app.use(cookieParser());
 // app.use(express.static(path.join(__dirname, 'public')));
 
-// Promise.all(settings.coin.map(i => {
-//     db.connect(i.name).then(data =>{
-//         require('./bin/instance')(data).then(()=>{})
-//         routes(data).then(router => app.use(`/coin/${data.coin}`, router));
-//     })
-// })).then(()=>{
-//     app.listen(app.get('port'), function() {
-//         debug('Express server listening on port ' + settings.port);
-//     });
-// })
-
 Promise.all(settings.coin.map(i => {
-    return db.connect(i.name)
-})).then(data => {
-    data.map(i => {
-        console.log(i.coin)
-        require('./bin/instance')(i).then(()=>{
-            // require('./scripts/sync')(i, 'update')
-        })
-        routes(i).then(router => app.use(`/coin/${i.coin}`, router));
+    console.log(i.name)
+    db.connect(i.name).then(data =>{
+        require('./bin/instance')(data)
+        routes(data).then(router => app.use(`/coin/${data.coin}`, router));
     })
-}).then(()=>{
+})).then(()=>{
     app.listen(app.get('port'), function() {
         debug('Express server listening on port ' + settings.port);
     });
 })
+
+// Promise.all(settings.coin.map(i => {
+//     return db.connect(i.name)
+// })).then(data => {
+//     data.map(i => {
+//         console.log(i.coin)
+//         require('./bin/instance')(i).then(()=>{
+//             // require('./scripts/sync')(i, 'update')
+//         })
+//         routes(i).then(router => app.use(`/coin/${i.coin}`, router));
+//     })
+// }).then(()=>{
+//     app.listen(app.get('port'), function() {
+//         debug('Express server listening on port ' + settings.port);
+//     });
+// })
 
 
 app.use('/ext/getmoneysupply', function(req,res){

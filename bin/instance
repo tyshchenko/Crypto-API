@@ -31,16 +31,16 @@ app.set('port', process.env.PORT || settings.port);
 //     });
 // })
 module.exports = (data) => {
-  db.check_stats(data.conn, data.coin).then((exists) =>{
+  db.fn('check', data.conn, 'stats', data.coin).then((exists) =>{
     if (exists == false) {
       console.log('no stats entry found, creating now..');
-      db.create_stats(data.conn, data.coin).then(()=>{});
+        db.fn('create', data.conn, 'stats', data.coin).then(()=>{});
     } else {}
   });
-  db.check_richlist(data.conn, data.coin).then((exists)=>{
+  db.fn('check', data.conn, 'richlist', data.coin).then((exists)=>{
     if (exists == false) {
       console.log('no richlist entry found, creating now..');
-      db.create_richlist(data.conn, data.coin).then(() =>{});
+        db.fn('create', data.conn, 'richlist', data.coin).then(() =>{});
     }
   });
 }
