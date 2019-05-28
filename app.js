@@ -1,7 +1,7 @@
 var express = require('express')
   , path = require('path')
   , chaincoinapi = require('chaincoin-node-api')
-  , logger = require('morgan')
+  // , logger = require('morgan')
   , cookieParser = require('cookie-parser')
   , bodyParser = require('body-parser')
   , settings = require('./lib/settings')
@@ -12,50 +12,64 @@ var debug = require('debug')('explorer');
 var app = express();
 app.set('port', process.env.PORT || settings.port);
 
-
+// for (let i of settings.coin){
+//     var count = settings.coin.indexOf(i);
+//     console.log(count)
+//     var node = [];
+//     node[count] = require('chaincoin-node-api')(i.name);
+//     app.use(`/api/${i.name}`, node[count].app);
+//     node[count].setWalletDetails(i.wallet);
+//     node[count].setAccess('only', ['getinfo', 'getstakinginfo', 'getnetworkhashps', 'getdifficulty', 'getconnectioncount',
+//         'getmasternodecount', 'getmasternodecountonline', 'getmasternodelist', 'getvotelist', 'getblockcount', 'getblockhash',
+//         'getblock', 'getrawtransaction', 'getmaxmoney', 'getvote', 'getmaxvote', 'getphase', 'getreward', 'getpeerinfo',
+//         'getnextrewardestimate', 'getnextrewardwhenstr', 'getnextrewardwhensec', 'getsupply', 'gettxoutsetinfo']);
+// }
+//
 settings.coin.map(i=>{
+    app.use(`/api/${i.name}`, chaincoinapi.app);
     chaincoinapi.setWalletDetails(i.wallet);
     chaincoinapi.setAccess('only', ['getinfo', 'getstakinginfo', 'getnetworkhashps', 'getdifficulty', 'getconnectioncount',
         'getmasternodecount', 'getmasternodecountonline', 'getmasternodelist', 'getvotelist', 'getblockcount', 'getblockhash',
         'getblock', 'getrawtransaction', 'getmaxmoney', 'getvote', 'getmaxvote', 'getphase', 'getreward', 'getpeerinfo',
         'getnextrewardestimate', 'getnextrewardwhenstr', 'getnextrewardwhensec', 'getsupply', 'gettxoutsetinfo']);
-    app.use(`/api/${i.name}`, chaincoinapi.app);
 })
 
 // app.use('/', routes)
 
 // app.use(favicon(path.join(__dirname, settings.favicon)));
-app.use(logger('dev'));
+// app.use(logger('dev'));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded());
 app.use(cookieParser());
-app.use(express.static(path.join(__dirname, 'public')));
-// app.get('/', function (req, res) {
-//     res.send('hello world')
+// app.use(express.static(path.join(__dirname, 'public')));
+
+// Promise.all(settings.coin.map(i => {
+//     db.connect(i.name).then(data =>{
+//         require('./bin/instance')(data).then(()=>{})
+//         routes(data).then(router => app.use(`/coin/${data.coin}`, router));
+//     })
+// })).then(()=>{
+//     app.listen(app.get('port'), function() {
+//         debug('Express server listening on port ' + settings.port);
+//     });
 // })
 
 Promise.all(settings.coin.map(i => {
     return db.connect(i.name)
 })).then(data => {
-    // app.get('/', function (req, res) {
-    //     res.send('hello world')
-    // })
     data.map(i => {
-        require('./bin/instance')(i)
+        console.log(i.coin)
+        require('./bin/instance')(i).then(()=>{
+            // require('./scripts/sync')(i, 'update')
+        })
+        routes(i).then(router => app.use(`/coin/${i.coin}`, router));
     })
 }).then(()=>{
     app.listen(app.get('port'), function() {
         debug('Express server listening on port ' + settings.port);
     });
 })
-Promise.all(settings.coin.map(i=>{
-    db.connect(i.name).then(conn=>{
-        console.log(conn.coin)
-        routes(conn).then(router => app.use(`/coin/${i.name}`, router));
-    })
-}))
 
-// routes
 
 app.use('/ext/getmoneysupply', function(req,res){
   lib.get_supply(function(supply){

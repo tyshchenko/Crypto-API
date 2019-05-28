@@ -23,10 +23,10 @@ function usage() {
   console.log('check        checks index for (and adds) any missing transactions/addresses');
   console.log('reindex      Clears index then resyncs from genesis to current block');
   console.log('');
-  console.log('notes:'); 
+  console.log('notes:');
   console.log('* \'current block\' is the latest created block when script is executed.');
   console.log('* The market database only supports (& defaults to) reindex mode.');
-  console.log('* If check mode finds missing data(ignoring new data since last sync),'); 
+  console.log('* If check mode finds missing data(ignoring new data since last sync),');
   console.log('  index_timeout in settings.json is set too low.')
   console.log('');
   process.exit(0);
@@ -107,12 +107,83 @@ function is_locked(cb) {
 
 function exit() {
   remove_lock(function(){
-    mongoose.disconnect();
+    // mongoose.disconnect();
     process.exit(0);
   });
 }
-
-
+//
+// module.exports = (data, mode) => {
+//     var coin = data.coin
+//     var conn = data.conn
+//     var i = settings.coin.find(x => x.name ===coin);
+//     is_locked(function (exists) {
+//         if (exists) {
+//             console.log("Script already running..");
+//             process.exit(0);
+//         } else {
+//             create_lock(function (){
+//                 console.log("script launched with pid: " + process.pid);
+//                 db.fn('check', conn, 'stats', coin).then((exists) =>{
+//                     if (exists == false) {
+//                         console.log('Run \'npm start\' to create database structures before running this script.');
+//                         exit();
+//                     } else {
+//                         db.update_stats(conn, coin).then(()=>{
+//                             db.fn('get', conn, 'stats', coin).then((stats)=>{
+//                                 if (mode == 'reindex') {
+//                                     var Stats_Model = Stats(conn)
+//                                     var Tx_Model = Tx(conn);
+//                                     var Address_Model = Address(conn);
+//                                     var Richlist_Model = Richlist(conn)
+//                                     Tx_Model.remove({}, function(err) {
+//                                         Address_Model.remove({}, function(err2) {
+//                                             Richlist_Model.update({coin: coin},
+//                                                 {$set: {
+//                                                         received: [],
+//                                                         balance: [],
+//                                                     }}, function(err3) {
+//                                                     Stats_Model.update({coin: coin},
+//                                                         {$set: {
+//                                                                 last: 0,
+//                                                             }}, function() {
+//                                                             console.log('index cleared (reindex)');
+//                                                         });
+//                                                     db.update_tx_db(conn, coin, 1, stats.block_height, i.update_timeout, function(){
+//                                                         db.update_richlist(conn, coin,'received').then(()=>{
+//                                                             db.update_richlist(conn, coin,'balance').then(()=>{
+//                                                                 console.log('reindex complete (block: %s)', stats.block_height);
+//                                                                 exit();
+//                                                             });
+//                                                         });
+//                                                     });
+//                                                 });
+//                                         });
+//                                     });
+//                                 } else if (mode == 'check') {
+//                                     db.update_tx_db(conn, coin, 1, stats.block_height, i.check_timeout, function(){
+//                                         console.log('check complete (block: %s)', stats.last);
+//                                         exit();
+//                                     });
+//                                 } else if (mode == 'update') {
+//                                     db.update_tx_db(conn, coin, stats.last, stats.block_height, i.update_timeout, function(){
+//                                         db.update_richlist(conn, coin,'received').then(()=>{
+//                                             db.update_richlist(conn, coin,'balance').then(()=>{
+//                                                 console.log('update complete (block: %s)', stats.last);
+//                                                 exit();
+//                                             });
+//                                         });
+//                                     });
+//                                 } else {
+//                                     exit();
+//                                 }
+//                             });
+//                         });
+//                     }
+//                 });
+//             });
+//         }
+//     });
+// }
 is_locked(function (exists) {
   if (exists) {
     console.log("Script already running..");
@@ -121,75 +192,74 @@ is_locked(function (exists) {
     create_lock(function (){
       console.log("script launched with pid: " + process.pid);
       Promise.all(settings.coin.map(i => {
-        db.connect(i.name).then((data)=>{
-            var conn = data.conn;
-            if (database == 'index') {
-                db.check_stats(conn, i.name).then((exists) =>{
-                    if (exists == false) {
-                        console.log('Run \'npm start\' to create database structures before running this script.');
-                        exit();
-                    } else {
-                        db.update_db(conn, i.name).then(()=>{
-                            db.get_stats(conn, i.name).then((stats)=>{
-                                if (mode == 'reindex') {
-                                    var Stats_Model = Stats(conn)
-                                    var Tx_Model = Tx(conn);
-                                    var Address_Model = Address(conn);
-                                    var Richlist_Model = Richlist(conn)
-                                    Tx_Model.remove({}, function(err) {
-                                        Address_Model.remove({}, function(err2) {
-                                            Richlist_Model.update({coin: i.name},
-                                                {$set: {
-                                                        received: [],
-                                                        balance: [],
-                                                    }}, function(err3) {
-                                                    Stats_Model.update({coin: i.name},
-                                                        {$set: {
-                                                                last: 0,
-                                                            }}, function() {
-                                                            console.log('index cleared (reindex)');
-                                                        });
-                                                    db.update_tx_db(conn, i.name, 1, stats.block_height, i.update_timeout, function(){
-                                                        db.update_richlist(conn, coin,'received').then(()=>{
-                                                            db.update_richlist(conn, coin,'balance').then(()=>{
-                                                                db.get_stats(conn, i.name).then((nstats)=>{
-                                                                    console.log('reindex complete (block: %s)', nstats.last);
-                                                                    exit();
-                                                                });
-                                                            });
-                                                        });
-                                                    });
-                                                });
-                                        });
-                                    });
-                                } else if (mode == 'check') {
-                                    db.update_tx_db(conn, i.name, 1, stats.block_height, i.check_timeout, function(){
-                                        db.get_stats(conn, i.name).then((nstats)=>{
-                                            console.log('check complete (block: %s)', nstats.last);
-                                            exit();
-                                        });
-                                    });
-                                } else if (mode == 'update') {
-                                    db.update_tx_db(conn, i.name, stats.last, stats.block_height, i.update_timeout, function(){
-                                        db.update_richlist(conn, coin,'received').then(()=>{
-                                            db.update_richlist(conn, coin,'balance').then(()=>{
-                                                db.get_stats(conn, i.name).then((nstats)=>{
-                                                    console.log('update complete (block: %s)', nstats.last);
-                                                    exit();
-                                                });
-                                            });
-                                        });
-                                    });
-                                } else {
-                                    exit();
-                                }
-                            });
-                        });
-                    }
-                });
-            }
-        })
-      }))
+        return db.connect(i.name)
+      })).then((data)=>{
+          data.map(i=>{
+              var coin = i.coin
+              var conn = i.conn;
+              console.log(conn.name)
+              // console.log(coin)
+              if (database == 'index') {
+                  db.fn('check', conn, 'stats', coin).then((exists) =>{
+                      if (exists == false) {
+                          console.log('Run \'npm start\' to create database structures before running this script.');
+                          exit();
+                      } else {
+                          db.update_stats(conn, coin).then(()=>{
+                              db.fn('get', conn, 'stats', coin).then((stats)=>{
+                                  if (mode == 'reindex') {
+                                      var Stats_Model = Stats(conn)
+                                      var Tx_Model = Tx(conn);
+                                      var Address_Model = Address(conn);
+                                      var Richlist_Model = Richlist(conn)
+                                      Tx_Model.remove({}, function(err) {
+                                          Address_Model.remove({}, function(err2) {
+                                              Richlist_Model.update({coin: coin},
+                                                  {$set: {
+                                                          received: [],
+                                                          balance: [],
+                                                      }}, function(err3) {
+                                                      Stats_Model.update({coin: coin},
+                                                          {$set: {
+                                                                  last: 0,
+                                                              }}, function() {
+                                                              console.log('index cleared (reindex)');
+                                                          });
+                                                      db.update_tx_db(conn, coin, 1, stats.block_height, i.update_timeout, function(){
+                                                          db.update_richlist(conn, coin,'received').then(()=>{
+                                                              db.update_richlist(conn, coin,'balance').then(()=>{
+                                                                  console.log('reindex complete (block: %s)', stats.block_height);
+                                                                  exit();
+                                                              });
+                                                          });
+                                                      });
+                                                  });
+                                          });
+                                      });
+                                  } else if (mode == 'check') {
+                                      db.update_tx_db(conn, coin, 1, stats.block_height, i.check_timeout, function(){
+                                          console.log('check complete (block: %s)', stats.last);
+                                          exit();
+                                      });
+                                  } else if (mode == 'update') {
+                                      db.update_tx_db(conn, coin, stats.last, stats.block_height, i.update_timeout, function(){
+                                          db.update_richlist(conn, coin,'received').then(()=>{
+                                              db.update_richlist(conn, coin,'balance').then(()=>{
+                                                  console.log('update complete (block: %s)', stats.last);
+                                                  exit();
+                                              });
+                                          });
+                                      });
+                                  } else {
+                                      exit();
+                                  }
+                              });
+                          });
+                      }
+                  });
+              }
+          })
+      })
     });
   }
 });
