@@ -1,10 +1,8 @@
 #!/usr/bin/env node
-var debug = require('debug')('explorer');
-var settings = require('../lib/settings');
+// var debug = require('debug')('explorer');
+// var settings = require('../lib/settings');
 var db = require('../lib/database');
-var app = require('../app');
 
-app.set('port', process.env.PORT || settings.port);
 
 // Promise.all(settings.coin.map(i=>{
 //     db.connect(i.name)
@@ -31,16 +29,16 @@ app.set('port', process.env.PORT || settings.port);
 //     });
 // })
 module.exports = (data) => {
-  db.fn('check', data.conn, 'stats', data.coin).then((exists) =>{
+  db.fn('check', data.connection, 'stats', data.name).then((exists) =>{
     if (exists == false) {
       console.log('no stats entry found, creating now..');
-        db.fn('create', data.conn, 'stats', data.coin).then(()=>{});
+        db.fn('create', data.connection, 'stats', data.name).then(()=>{});
     } else {}
   });
-  db.fn('check', data.conn, 'richlist', data.coin).then((exists)=>{
+  db.fn('check', data.connection, 'richlist', data.name).then((exists)=>{
     if (exists == false) {
       console.log('no richlist entry found, creating now..');
-        db.fn('create', data.conn, 'richlist', data.coin).then(() =>{});
+        db.fn('create', data.connection, 'richlist', data.name).then(() =>{});
     }
   });
 }
