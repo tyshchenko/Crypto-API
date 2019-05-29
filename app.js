@@ -1,76 +1,30 @@
 var express = require('express')
   , path = require('path')
-  , chaincoinapi = require('chaincoin-node-api')
-  // , logger = require('morgan')
+  , coin = require('./coin/coin')
   , cookieParser = require('cookie-parser')
   , bodyParser = require('body-parser')
   , settings = require('./lib/settings')
   , lib = require('./lib/explorer')
   , db = require('./lib/database')
-var routes = require('./routes/index')
+var array = require('./initial/index');
 var debug = require('debug')('explorer');
 var app = express();
 app.set('port', process.env.PORT || settings.port);
-
-// for (let i of settings.coin){
-//     var count = settings.coin.indexOf(i);
-//     console.log(count)
-//     var node = [];
-//     node[count] = require('chaincoin-node-api')(i.name);
-//     app.use(`/api/${i.name}`, node[count].app);
-//     node[count].setWalletDetails(i.wallet);
-//     node[count].setAccess('only', ['getinfo', 'getstakinginfo', 'getnetworkhashps', 'getdifficulty', 'getconnectioncount',
-//         'getmasternodecount', 'getmasternodecountonline', 'getmasternodelist', 'getvotelist', 'getblockcount', 'getblockhash',
-//         'getblock', 'getrawtransaction', 'getmaxmoney', 'getvote', 'getmaxvote', 'getphase', 'getreward', 'getpeerinfo',
-//         'getnextrewardestimate', 'getnextrewardwhenstr', 'getnextrewardwhensec', 'getsupply', 'gettxoutsetinfo']);
-// }
-//
-settings.coin.map(i=>{
-    app.use(`/api/${i.name}`, chaincoinapi.app);
-    chaincoinapi.setWalletDetails(i.wallet);
-    chaincoinapi.setAccess('only', ['getinfo', 'getstakinginfo', 'getnetworkhashps', 'getdifficulty', 'getconnectioncount',
-        'getmasternodecount', 'getmasternodecountonline', 'getmasternodelist', 'getvotelist', 'getblockcount', 'getblockhash',
-        'getblock', 'getrawtransaction', 'getmaxmoney', 'getvote', 'getmaxvote', 'getphase', 'getreward', 'getpeerinfo',
-        'getnextrewardestimate', 'getnextrewardwhenstr', 'getnextrewardwhensec', 'getsupply', 'gettxoutsetinfo']);
-})
-
-// app.use('/', routes)
-
-// app.use(favicon(path.join(__dirname, settings.favicon)));
-// app.use(logger('dev'));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded());
 app.use(cookieParser());
-// app.use(express.static(path.join(__dirname, 'public')));
 
-Promise.all(settings.coin.map(i => {
-    console.log(i.name)
-    db.connect(i.name).then(data =>{
-        require('./bin/instance')(data)
-        routes(data).then(router => app.use(`/coin/${data.coin}`, router));
-    })
+var arrayOfCoin = array.map(i => {return new coin.Coin(require(`./initial/${i}`))});
+Promise.all(arrayOfCoin.map(coin =>{
+    console.log(coin.name)
+    app.use(`/api/${coin.name}`, coin.clientRouter);
+    app.use(`/coin/${coin.name}`, coin.dbRouter);
+    require('./bin/instance')(coin.connection)
 })).then(()=>{
     app.listen(app.get('port'), function() {
         debug('Express server listening on port ' + settings.port);
     });
 })
-
-// Promise.all(settings.coin.map(i => {
-//     return db.connect(i.name)
-// })).then(data => {
-//     data.map(i => {
-//         console.log(i.coin)
-//         require('./bin/instance')(i).then(()=>{
-//             // require('./scripts/sync')(i, 'update')
-//         })
-//         routes(i).then(router => app.use(`/coin/${i.coin}`, router));
-//     })
-// }).then(()=>{
-//     app.listen(app.get('port'), function() {
-//         debug('Express server listening on port ' + settings.port);
-//     });
-// })
-
 
 app.use('/ext/getmoneysupply', function(req,res){
   lib.get_supply(function(supply){
@@ -127,32 +81,30 @@ app.use('/ext/connections', function(req,res){
   });
 });
 
-// app.use(function(req, res, next) {
-//     var err = new Error('Not Found');
-//     err.status = 404;
-//     next(err);
-// });
-//
-// // development error handler
-// // will print stacktrace
-// if (app.get('env') === 'development') {
-//     app.use(function(err, req, res, next) {
-//         res.status(err.status || 500);
-//         res.json('error', {
-//             message: err.message,
-//             error: err
-//         });
-//     });
-// }
-//
-// // production error handler
-// // no stacktraces leaked to user
-// app.use(function(err, req, res, next) {
-//     res.status(err.status || 500);
-//     res.json('error', {
-//         message: err.message,
-//         error: {}
-//     });
-// });
+app.use(function(req, res, next) {
+    var err = new Error('Not Found');
+    err.status = 404;
+    next(err);
+});
 
-module.exports = app;
+// development error handler
+// will print stacktrace
+if (app.get('env') === 'development') {
+    app.use(function(err, req, res, next) {
+        res.status(err.status || 500);
+        res.json('error', {
+            message: err.message,
+            error: err
+        });
+    });
+}
+
+// production error handler
+// no stacktraces leaked to user
+app.use(function(err, req, res, next) {
+    res.status(err.status || 500);
+    res.json('error', {
+        message: err.message,
+        error: {}
+    });
+});
