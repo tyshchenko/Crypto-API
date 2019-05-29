@@ -5,8 +5,10 @@ var mongoose = require('mongoose')
   , Richlist = require('../models/richlist')  
   , Stats = require('../models/stats')  
   , settings = require('../lib/settings')
+    , coin = require('../coin/coin')
   , fs = require('fs');
-
+var array = require('../initial/index');
+var arrayOfCoin = array.map(i => {return new coin.Coin(require(`../initial/${i}`))});
 var mode = 'update';
 var database = 'index';
 
@@ -111,79 +113,7 @@ function exit() {
     process.exit(0);
   });
 }
-//
-// module.exports = (data, mode) => {
-//     var coin = data.coin
-//     var conn = data.conn
-//     var i = settings.coin.find(x => x.name ===coin);
-//     is_locked(function (exists) {
-//         if (exists) {
-//             console.log("Script already running..");
-//             process.exit(0);
-//         } else {
-//             create_lock(function (){
-//                 console.log("script launched with pid: " + process.pid);
-//                 db.fn('check', conn, 'stats', coin).then((exists) =>{
-//                     if (exists == false) {
-//                         console.log('Run \'npm start\' to create database structures before running this script.');
-//                         exit();
-//                     } else {
-//                         db.update_stats(conn, coin).then(()=>{
-//                             db.fn('get', conn, 'stats', coin).then((stats)=>{
-//                                 if (mode == 'reindex') {
-//                                     var Stats_Model = Stats(conn)
-//                                     var Tx_Model = Tx(conn);
-//                                     var Address_Model = Address(conn);
-//                                     var Richlist_Model = Richlist(conn)
-//                                     Tx_Model.remove({}, function(err) {
-//                                         Address_Model.remove({}, function(err2) {
-//                                             Richlist_Model.update({coin: coin},
-//                                                 {$set: {
-//                                                         received: [],
-//                                                         balance: [],
-//                                                     }}, function(err3) {
-//                                                     Stats_Model.update({coin: coin},
-//                                                         {$set: {
-//                                                                 last: 0,
-//                                                             }}, function() {
-//                                                             console.log('index cleared (reindex)');
-//                                                         });
-//                                                     db.update_tx_db(conn, coin, 1, stats.block_height, i.update_timeout, function(){
-//                                                         db.update_richlist(conn, coin,'received').then(()=>{
-//                                                             db.update_richlist(conn, coin,'balance').then(()=>{
-//                                                                 console.log('reindex complete (block: %s)', stats.block_height);
-//                                                                 exit();
-//                                                             });
-//                                                         });
-//                                                     });
-//                                                 });
-//                                         });
-//                                     });
-//                                 } else if (mode == 'check') {
-//                                     db.update_tx_db(conn, coin, 1, stats.block_height, i.check_timeout, function(){
-//                                         console.log('check complete (block: %s)', stats.last);
-//                                         exit();
-//                                     });
-//                                 } else if (mode == 'update') {
-//                                     db.update_tx_db(conn, coin, stats.last, stats.block_height, i.update_timeout, function(){
-//                                         db.update_richlist(conn, coin,'received').then(()=>{
-//                                             db.update_richlist(conn, coin,'balance').then(()=>{
-//                                                 console.log('update complete (block: %s)', stats.last);
-//                                                 exit();
-//                                             });
-//                                         });
-//                                     });
-//                                 } else {
-//                                     exit();
-//                                 }
-//                             });
-//                         });
-//                     }
-//                 });
-//             });
-//         }
-//     });
-// }
+
 is_locked(function (exists) {
   if (exists) {
     console.log("Script already running..");
@@ -191,75 +121,71 @@ is_locked(function (exists) {
   } else {
     create_lock(function (){
       console.log("script launched with pid: " + process.pid);
-      Promise.all(settings.coin.map(i => {
-        return db.connect(i.name)
-      })).then((data)=>{
-          data.map(i=>{
-              var coin = i.coin
-              var conn = i.conn;
-              console.log(conn.name)
-              // console.log(coin)
-              if (database == 'index') {
-                  db.fn('check', conn, 'stats', coin).then((exists) =>{
-                      if (exists == false) {
-                          console.log('Run \'npm start\' to create database structures before running this script.');
-                          exit();
-                      } else {
-                          db.update_stats(conn, coin).then(()=>{
-                              db.fn('get', conn, 'stats', coin).then((stats)=>{
-                                  if (mode == 'reindex') {
-                                      var Stats_Model = Stats(conn)
-                                      var Tx_Model = Tx(conn);
-                                      var Address_Model = Address(conn);
-                                      var Richlist_Model = Richlist(conn)
-                                      Tx_Model.remove({}, function(err) {
-                                          Address_Model.remove({}, function(err2) {
-                                              Richlist_Model.update({coin: coin},
-                                                  {$set: {
-                                                          received: [],
-                                                          balance: [],
-                                                      }}, function(err3) {
-                                                      Stats_Model.update({coin: coin},
-                                                          {$set: {
-                                                                  last: 0,
-                                                              }}, function() {
-                                                              console.log('index cleared (reindex)');
-                                                          });
-                                                      db.update_tx_db(conn, coin, 1, stats.block_height, i.update_timeout, function(){
-                                                          db.update_richlist(conn, coin,'received').then(()=>{
-                                                              db.update_richlist(conn, coin,'balance').then(()=>{
-                                                                  console.log('reindex complete (block: %s)', stats.block_height);
-                                                                  exit();
-                                                              });
+      Promise.all(arrayOfCoin.map(i => {
+          var coin = i.name
+          var conn = i.connection.connection;
+          var settings = require(`../initial/${i.name}`)
+          if (database == 'index') {
+              db.fn('check', conn, 'stats', coin).then((exists) =>{
+                  console.log(exists)
+                  if (exists == false) {
+                      console.log('Run \'npm start\' to create database structures before running this script.');
+                      exit();
+                  } else {
+                      db.update_stats(conn, coin).then(()=>{
+                          db.fn('get', conn, 'stats', coin).then((stats)=>{
+                              if (mode == 'reindex') {
+                                  var Stats_Model = Stats(conn)
+                                  var Tx_Model = Tx(conn);
+                                  var Address_Model = Address(conn);
+                                  var Richlist_Model = Richlist(conn)
+                                  Tx_Model.remove({}, function(err) {
+                                      Address_Model.remove({}, function(err2) {
+                                          Richlist_Model.update({coin: coin},
+                                              {$set: {
+                                                      received: [],
+                                                      balance: [],
+                                                  }}, function(err3) {
+                                                  Stats_Model.update({coin: coin},
+                                                      {$set: {
+                                                              last: 0,
+                                                          }}, function() {
+                                                          console.log('index cleared (reindex)');
+                                                      });
+                                                  db.update_tx_db(conn, coin, 1, stats.block_height, settings.update_timeout, function(){
+                                                      db.update_richlist(conn, coin,'received').then(()=>{
+                                                          db.update_richlist(conn, coin,'balance').then(()=>{
+                                                              console.log('reindex complete (block: %s)', stats.block_height);
+                                                              exit();
                                                           });
                                                       });
                                                   });
-                                          });
-                                      });
-                                  } else if (mode == 'check') {
-                                      db.update_tx_db(conn, coin, 1, stats.block_height, i.check_timeout, function(){
-                                          console.log('check complete (block: %s)', stats.last);
-                                          exit();
-                                      });
-                                  } else if (mode == 'update') {
-                                      db.update_tx_db(conn, coin, stats.last, stats.block_height, i.update_timeout, function(){
-                                          db.update_richlist(conn, coin,'received').then(()=>{
-                                              db.update_richlist(conn, coin,'balance').then(()=>{
-                                                  console.log('update complete (block: %s)', stats.last);
-                                                  exit();
                                               });
+                                      });
+                                  });
+                              } else if (mode == 'check') {
+                                  db.update_tx_db(conn, coin, 1, stats.block_height, settings.check_timeout, function(){
+                                      console.log('check complete (block: %s)', stats.last);
+                                      exit();
+                                  });
+                              } else if (mode == 'update') {
+                                  db.update_tx_db(conn, coin, stats.last, stats.block_height, settings.update_timeout, function(){
+                                      db.update_richlist(conn, coin,'received').then(()=>{
+                                          db.update_richlist(conn, coin,'balance').then(()=>{
+                                              console.log('update complete (block: %s)', stats.last);
+                                              exit();
                                           });
                                       });
-                                  } else {
-                                      exit();
-                                  }
-                              });
+                                  });
+                              } else {
+                                  exit();
+                              }
                           });
-                      }
-                  });
-              }
-          })
-      })
+                      });
+                  }
+              });
+          }
+      }))
     });
   }
 });
