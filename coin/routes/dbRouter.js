@@ -1,5 +1,5 @@
 var express = require('express')
-var settings = require('../../lib/settings')
+var settings = require('../../initial/settings')
 var db = require('../../lib/database')
 var lib = require('../../lib/explorer')
 
