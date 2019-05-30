@@ -1,6 +1,6 @@
 module.exports = {
     name: "award",
-    symbol: "CHC",
+    symbol: "AWA",
     update_timeout: 10,
     check_timeout: 250,
     wallet: {

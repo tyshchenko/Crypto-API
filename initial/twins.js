@@ -1,11 +1,11 @@
 module.exports = {
-    name: "blockshare",
-    symbol: "BLS",
+    name: "twins",
+    symbol: "TWINS",
     update_timeout: 10,
     check_timeout: 250,
     wallet: {
         host: "localhost",
-        port: 61613,
+        port: 19915,
         user: "sha1",
         pass: "sha1"
     },
