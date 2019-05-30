@@ -1,4 +1,4 @@
-var settings = require('../lib/settings')
+var settings = require('../initial/settings')
 var mongoose = require('mongoose');
 function Connection(coin) {
     this.name = coin;
