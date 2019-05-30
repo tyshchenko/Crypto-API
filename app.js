@@ -1,63 +1,63 @@
 var express = require('express')
-  , path = require('path')
+  // , path = require('path')
   , coin = require('./coin/coin')
   , cookieParser = require('cookie-parser')
   , bodyParser = require('body-parser')
-  , settings = require('./lib/settings')
+  , settings = require('./initial/settings')
   , lib = require('./lib/explorer')
   , db = require('./lib/database')
-var array = require('./initial/index');
+// var array = require('./initial/index');
 var debug = require('debug')('explorer');
 var app = express();
 app.set('port', process.env.PORT || settings.port);
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded());
 app.use(cookieParser());
-
-var arrayOfCoin = array.map(i => {return new coin.Coin(require(`./initial/${i}`))});
+var arrayOfCoin = require('./coin/arrayOfCoin')
+// var arrayOfCoin = array.map(i => {return new coin.Coin(require(`./initial/${i}`))});
 Promise.all(arrayOfCoin.map(coin =>{
     console.log(coin.name)
     app.use(`/api/${coin.name}`, coin.clientRouter);
     app.use(`/coin/${coin.name}`, coin.dbRouter);
-    require('./bin/instance')(coin.connection)
+    require('./scripts/instance')(coin.connection)
 })).then(()=>{
     app.listen(app.get('port'), function() {
         debug('Express server listening on port ' + settings.port);
     });
 })
 
-app.use('/ext/getmoneysupply', function(req,res){
-  lib.get_supply(function(supply){
-    res.send(' '+supply);
-  });
-});
+// app.use('/ext/getmoneysupply', function(req,res){
+//   lib.get_supply(function(supply){
+//     res.send(' '+supply);
+//   });
+// });
+// //
+// app.use('/ext/getaddress/:hash', function(req,res){
+//   db.get_address(req.param('hash'), function(address){
+//     if (address) {
+//       var a_ext = {
+//         address: address.a_id,
+//         sent: (address.sent / 100000000),
+//         received: (address.received / 100000000),
+//         balance: (address.balance / 100000000).toString().replace(/(^-+)/mg, ''),
+//         last_txs: address.txs,
+//       };
+//       res.send(a_ext);
+//     } else {
+//       res.send({ error: 'address not found.', hash: req.param('hash')})
+//     }
+//   });
+// });
 //
-app.use('/ext/getaddress/:hash', function(req,res){
-  db.get_address(req.param('hash'), function(address){
-    if (address) {
-      var a_ext = {
-        address: address.a_id,
-        sent: (address.sent / 100000000),
-        received: (address.received / 100000000),
-        balance: (address.balance / 100000000).toString().replace(/(^-+)/mg, ''),
-        last_txs: address.txs,
-      };
-      res.send(a_ext);
-    } else {
-      res.send({ error: 'address not found.', hash: req.param('hash')})
-    }
-  });
-});
-
-app.use('/ext/getbalance/:hash', function(req,res){
-  db.get_address(req.param('hash'), function(address){
-    if (address) {
-      res.send((address.balance / 100000000).toString().replace(/(^-+)/mg, ''));
-    } else {
-      res.send({ error: 'address not found.', hash: req.param('hash')})
-    }
-  });
-});
+// app.use('/ext/getbalance/:hash', function(req,res){
+//   db.get_address(req.param('hash'), function(address){
+//     if (address) {
+//       res.send((address.balance / 100000000).toString().replace(/(^-+)/mg, ''));
+//     } else {
+//       res.send({ error: 'address not found.', hash: req.param('hash')})
+//     }
+//   });
+// });
 
 app.use('/ext/getdistribution', function(req,res){
   db.get_richlist(settings.coin, function(richlist){
@@ -81,30 +81,25 @@ app.use('/ext/connections', function(req,res){
   });
 });
 
-app.use(function(req, res, next) {
-    var err = new Error('Not Found');
-    err.status = 404;
-    next(err);
-});
+// app.use(function(req, res, next) {
+//     var err = new Error('Not Found');
+//     err.status = 404;
+//     next(err);
+// });
+// if (app.get('env') === 'development') {
+//     app.use(function(err, req, res, next) {
+//         res.status(err.status || 500);
+//         res.json('error', {
+//             message: err.message,
+//             error: err
+//         });
+//     });
+// }
+// app.use(function(err, req, res, next) {
+//     res.status(err.status || 500);
+//     res.json('error', {
+//         message: err.message,
+//         error: {}
+//     });
+// });
 
-// development error handler
-// will print stacktrace
-if (app.get('env') === 'development') {
-    app.use(function(err, req, res, next) {
-        res.status(err.status || 500);
-        res.json('error', {
-            message: err.message,
-            error: err
-        });
-    });
-}
-
-// production error handler
-// no stacktraces leaked to user
-app.use(function(err, req, res, next) {
-    res.status(err.status || 500);
-    res.json('error', {
-        message: err.message,
-        error: {}
-    });
-});
