@@ -1,14 +1,14 @@
-var mongoose = require('mongoose')
-  , db = require('../lib/database')
-  , Tx = require('../models/tx')  
-  , Address = require('../models/address')  
-  , Richlist = require('../models/richlist')  
-  , Stats = require('../models/stats')  
-  , settings = require('../lib/settings')
-    , coin = require('../coin/coin')
-  , fs = require('fs');
-var array = require('../initial/index');
-var arrayOfCoin = array.map(i => {return new coin.Coin(require(`../initial/${i}`))});
+// var mongoose = require('mongoose')
+var db = require('../lib/database')
+var Tx = require('../models/tx')
+var Address = require('../models/address')
+var Richlist = require('../models/richlist')
+var Stats = require('../models/stats')
+var coin = require('../coin/coin')
+var fs = require('fs');
+var arrayOfCoin = require('../coin/arrayOfCoin');
+// var array = require('../initial/index');
+// var arrayOfCoin = array.map(i => {return new coin.Coin(require(`../initial/${i}`))});
 var mode = 'update';
 var database = 'index';
 
@@ -122,18 +122,17 @@ is_locked(function (exists) {
     create_lock(function (){
       console.log("script launched with pid: " + process.pid);
       Promise.all(arrayOfCoin.map(i => {
-          var coin = i.name
+          var coin = i.name;
           var conn = i.connection.connection;
           var settings = require(`../initial/${i.name}`)
           if (database == 'index') {
-              db.fn('check', conn, 'stats', coin).then((exists) =>{
-                  console.log(exists)
+              db.fn('check', conn, 'stats', {coin: coin}).then((exists) =>{
                   if (exists == false) {
                       console.log('Run \'npm start\' to create database structures before running this script.');
                       exit();
                   } else {
                       db.update_stats(conn, coin).then(()=>{
-                          db.fn('get', conn, 'stats', coin).then((stats)=>{
+                          db.fn('get', conn, 'stats', {coin: coin}).then((stats)=>{
                               if (mode == 'reindex') {
                                   var Stats_Model = Stats(conn)
                                   var Tx_Model = Tx(conn);
