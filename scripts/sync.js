@@ -1,9 +1,9 @@
 // var mongoose = require('mongoose')
 var db = require('../lib/database')
-var Tx = require('../models/tx')
-var Address = require('../models/address')
-var Richlist = require('../models/richlist')
-var Stats = require('../models/stats')
+var Tx = require('../model/tx')
+var Address = require('../model/address')
+var Richlist = require('../model/rich')
+var Stats = require('../model/stats')
 var coin = require('../coin/coin')
 var fs = require('fs');
 var arrayOfCoin = require('../coin/arrayOfCoin');
