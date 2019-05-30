@@ -1,12 +1,16 @@
 var mongoose = require('mongoose')
-  , Schema = mongoose.Schema;
 
-var PeersSchema = new Schema({
-  createdAt: { type: Date, expires: 86400, default: Date.now()},
-  address: { type: String, default: "" },
-  protocol: { type: String, default: "" },
-  version: { type: String, default: "" },
-  country: { type: String, default: "" }
-});
-
-module.exports = (conn) => conn.model('Peers', PeersSchema);
+module.exports = (connection) => connection.model('Peer', new mongoose.Schema({
+  __v: { select: false, type: Number },
+  _id: { required: true, select: false, type: String },
+  country: { type: String },
+  countryCode: { type: String },
+  createdAt: { index: true, required: true, type: Date },
+  ip: { index: true, required: true, type: String },
+  lat: { type: String },
+  lon: { type: String },
+  port: { type: Number },
+  subver: { required: true, type: String },
+  timeZone: { type: String },
+  ver: { required: true, type: Number }
+}, { versionKey: false }), 'peers');
