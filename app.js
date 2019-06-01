@@ -33,7 +33,7 @@ Promise.all(arrayOfCoin.map(coin =>{
 // });
 // //
 // app.use('/ext/getaddress/:hash', function(req,res){
-//   db.get_address(req.param('hash'), function(address){
+//   router.get_address(req.param('hash'), function(address){
 //     if (address) {
 //       var a_ext = {
 //         address: address.a_id,
@@ -50,7 +50,7 @@ Promise.all(arrayOfCoin.map(coin =>{
 // });
 //
 // app.use('/ext/getbalance/:hash', function(req,res){
-//   db.get_address(req.param('hash'), function(address){
+//   router.get_address(req.param('hash'), function(address){
 //     if (address) {
 //       res.send((address.balance / 100000000).toString().replace(/(^-+)/mg, ''));
 //     } else {
