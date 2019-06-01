@@ -1,7 +1,7 @@
 var mongoose = require('mongoose')
   , db = require('../lib/database')
-  , Tx = require('../models/tx')  
-  , Address = require('../models/address')  
+  , Tx = require('../model/tx')
+  , Address = require('../model/address')
   , settings = require('../lib/settings');
 
 
