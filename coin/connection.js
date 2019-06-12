@@ -1,6 +1,9 @@
 // Constructor create new connection
 var settings = require('../initial/settings');
 var mongoose = require('mongoose');
+mongoose.set('useNewUrlParser', true);
+mongoose.set('useFindAndModify', false);
+mongoose.set('useCreateIndex', true);
 function Connection(coin) {
     var dbString = 'mongodb://' + settings.dbsettings.user;
     dbString = dbString + ':' + settings.dbsettings.password;
