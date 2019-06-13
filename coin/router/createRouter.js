@@ -1,5 +1,5 @@
-module.exports = (coin) => {
-    const express = require('express');
+const express = require('express');
+function Router(coin) {
     const blockex = require('./blockex')(coin);
     const iquidus = require('./iquidus')(coin);
     const router = express.Router();
@@ -25,8 +25,6 @@ module.exports = (coin) => {
     router.get('/tx/week', blockex.getTXsWeek());
     router.get('/tx/month', blockex.getTXsMonth());
     router.get('/tx/:hash', blockex.getTX);
-
-// Iquidus Explorer routes.
     router.get('/getdifficulty', iquidus.getdifficulty);
     router.get('/getconnectioncount', iquidus.getconnectioncount);
     router.get('/getblockcount', iquidus.getblockcount);
@@ -34,5 +32,7 @@ module.exports = (coin) => {
     router.get('/getblock', iquidus.getblock);
     router.get('/getrawtransaction', iquidus.getrawtransaction);
     router.get('/getnetworkhashps', iquidus.getnetworkhashps);
-    return router;
-};
+    this.router = router;
+}
+
+module.exports.Router =Router;

@@ -1,10 +1,10 @@
 module.exports = (coin) => {
     const blockex = require('./blockex')(coin);
-    const rpc = coin.rpc;
-    const Block = coin.block;
-    const Coin = coin.coin;
-    const Rich = coin.rich;
-    const UTXO = coin.utxo;
+    const rpc =  coin.rpc;
+    const Block =  coin.block;
+    const Coin =  coin.coin;
+    const Rich =  coin.rich;
+    const UTXO =  coin.utxo;
     const getCoin = async () => Coin.findOne().sort({ createdAt: -1 });
     const getdifficulty = async (req, res) => {
         try {

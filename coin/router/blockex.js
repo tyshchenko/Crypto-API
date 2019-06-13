@@ -9,6 +9,7 @@ module.exports = (coin) => {
     var Coin = coin.coin;
     var Peer = coin.peer;
     var Rich = coin.rich;
+    // console.log('blockex.js '+typeof Block);
     const getAddress = async(req, res) => {
         try {
             const qtxs = TX
