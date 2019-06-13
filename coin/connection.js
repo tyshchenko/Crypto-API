@@ -11,6 +11,5 @@ function Connection(coin) {
     dbString = dbString + ':' + settings.dbsettings.port;
     dbString = dbString + '/' + coin;
     this.connection = mongoose.createConnection(dbString);
-    // this.connection.router.createUser(settings.dbsettings.user, settings.dbsettings.password);
 }
 module.exports.Connection = Connection;

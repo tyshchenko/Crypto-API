@@ -9,7 +9,7 @@ var rich = require('./model/rich');
 var tx = require('./model/tx');
 var utxo = require('./model/utxo');
 var blockreward = require('./model/blockreward');
-// var router = require('./router/createRouter');
+var router = require('./router/createRouter');
 //Contructor create new coin object
 function Coin(object) {
     this.name = object.name;
@@ -23,6 +23,6 @@ function Coin(object) {
     this.tx = new tx.TX(this.connection).model;
     this.utxo = new utxo.UTXO(this.connection).model;
     this.blockreward = new blockreward.BlockReward(this.connection).model;
-    // this.router = new router.Router(this).router;
+    this.router = new router.Router(this).router;
 }
 module.exports.Coin = Coin;
