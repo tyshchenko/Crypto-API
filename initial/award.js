@@ -7,7 +7,12 @@ module.exports = {
         host: "localhost",
         port: 19915,
         user: "sha1",
-        pass: "sha1"
+        pass: "sha1",
+        timeout: 8000
+    },
+    coinMarketCap: {
+        'api': 'http://api.coinmarketcap.com/v1/ticker/',
+        'ticker': 'win-win'
     },
     confirmations: 40,
     display: {
@@ -58,13 +63,6 @@ module.exports = {
     heavy: false,
     txcount: 100,
     show_sent_received: true,
-
-    // how to calculate current coin supply
-    // COINBASE : total sent from coinbase (PoW)
-    // GETINFO : retreive from getinfo api call (PoS)
-    // HEAVY: retreive from heavys getsupply api call
-    // BALANCES : total of all address balances
-    // TXOUTSET : retreive from gettxoutsetinfo api call
     supply: "TXOUTSET",
     nethash: "getnetworkhashps",
     nethash_units: "G",
@@ -72,4 +70,4 @@ module.exports = {
         //  "CLkWg5YSLod772uLzsFRxHgHiWVGAJSezm": {"label": "Donation Address", "type":"primary", "url":"http://example.com"},
         //  "CaxX1HVWzbQ516w61XbtHR63vNmp2mvLMZ": {"label": "Max Lee War Chest"}
     }
-}
+};
