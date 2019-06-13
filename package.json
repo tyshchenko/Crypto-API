@@ -1,14 +1,11 @@
 {
   "name": "explorer",
-  "version": "1.7.2",
+  "version": "1.0.0",
   "private": true,
   "scripts": {
-    "start": "node --stack-size=10000 ./bin/cluster",
-    "stop": "kill -2 $(cat tmp/cluster.pid)",
-    "test": "node ./node_modules/jasmine/bin/jasmine.js"
+    "start": "node ./server/index.js",
   },
   "dependencies": {
-    "axios": "^0.18.0",
     "babel-polyfill": "^6.26.0",
     "bitcoin": "^3.0.1",
     "bluebird": "^3.5.5",
@@ -22,7 +19,6 @@
     "isomorphic-fetch": "^2.2.1",
     "jsonminify": "0.2.3",
     "markdown-js": "0.0.3",
-    "module-alias": "^2.2.0",
     "moment": "^2.24.0",
     "mongodb": "^3.2.6",
     "mongoose": "^5.5.12",
@@ -34,9 +30,4 @@
   "devDependencies": {
     "jasmine": "~2.1.0"
   },
-  "_moduleAliases": {
-    "_lib": "./lib",
-    "_model": "./model",
-    "_root": "./"
-  }
 }
