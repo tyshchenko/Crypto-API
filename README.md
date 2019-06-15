@@ -15,8 +15,6 @@
   <a href="https://circleci.com/gh/pinokara/Crypto-API">
     <img src="https://circleci.com/gh/facebook/react-native.svg?style=shield" alt="Current CircleCI build status." />
   </a>
-    <img src="https://img.shields.io/badge/PRs-welcome-brightgreen.svg" alt="PRs welcome!" />
-    <img src="https://img.shields.io/twitter/follow/reactnative.svg?label=Follow%20@reactnative" alt="Follow @Crypto-Critic" />
 </p>
 
 ## Contents
