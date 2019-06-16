@@ -49,7 +49,7 @@ https://yarnpkg.com/lang/en/docs/install/
 #### Database Configuration
 `mongo` - connect using mongo client.
 
-`use blockex` - switch to database.
+`use ${cryptocurrency-name}` - switch to database.
 
 `db.createUser( { user: "sha1", pwd: "sha1", roles: [ "readWrite" ] } )` - create a user with the values stored in the `./initial/settings.js` file from above, meaning they should match.
 
