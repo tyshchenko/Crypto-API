@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "start": "node ./server/index.js",
+    "start": "node ./server/index.js"
   },
   "dependencies": {
     "babel-polyfill": "^6.26.0",
@@ -29,5 +29,5 @@
   },
   "devDependencies": {
     "jasmine": "~2.1.0"
-  },
+  }
 }
