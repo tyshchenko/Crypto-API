@@ -1,4 +1,4 @@
-var RPC = require('../lib/rpc');
+var RPC = require('./rpc/rpc');
 var conn = require('./connection');
 var createRouter = require('./router/createRouter');
 var coin = require('./model/coin');
@@ -10,6 +10,7 @@ var tx = require('./model/tx');
 var utxo = require('./model/utxo');
 var blockreward = require('./model/blockreward');
 var router = require('./router/createRouter');
+var RPC = require('./rpc/rpc');
 //Contructor create new coin object
 function Coin(object) {
     this.name = object.name;
