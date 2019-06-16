@@ -1,5 +1,5 @@
 const promise = require('bluebird');
-const rpc = require('node-bitcoin-rpc');
+const myRPC = require('./myRPC');
 
 // Singleton.
 let instance = null;
@@ -11,22 +11,14 @@ let instance = null;
  */
 class RPC {
     constructor(config) {
-        if (!instance) {
-            instance = this;
-
-            rpc.init(
-                config.host,
-                config.port,
-                config.user,
-                config.pass
-            );
-
-            rpc.setTimeout(config.timeout);
-        }
-
-        return instance;
+        this.rpc = new myRPC(
+            config.host,
+            config.port,
+            config.user,
+            config.pass,
+            config.timeout
+        )
     }
-
     call(fn, params = []) {
         if (!fn) {
             return Promise.reject(new Error('Please provide a rpc method name.'));
@@ -35,15 +27,13 @@ class RPC {
         if (!params) {
             params = [];
         }
-
         return new promise((resolve, reject) => {
-            rpc.call(fn, params, (err, data) => {
+            this.rpc.call(fn, params, (err, data) => {
                 if (err || !!data.error) {
                     console.log(fn, err || data.error);
                     reject(new Error(err || data.error));
                     return;
                 }
-
                 resolve(data.result);
             });
         });
@@ -57,8 +47,7 @@ class RPC {
         if (!ms) {
             return;
         }
-
-        rpc.setTimeout(ms);
+        this.rpc.setTimeout(ms);
     }
 }
 
