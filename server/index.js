@@ -1,7 +1,7 @@
 require('babel-polyfill');
 const cluster = require('cluster');
-const coin = require('../coin/coin');
-
+//const coin = require('../coin/coin');
+var array = require(`../coin/arrayOfCoin`);
 // Master
 if (cluster.isMaster) {
     let cpus = require('os').cpus().length;
@@ -29,7 +29,7 @@ else {
     const middleware = require('./middleware');
     const app = express();
     middleware(app);
-    require(`../coin/arrayOfCoin`).map(i => {
+    array.map(i => {
         console.log(typeof i.router);
         app.use(`/api/${i.name}`, i.router);
     });
