@@ -7,14 +7,19 @@
   },
   "dependencies": {
     "babel-polyfill": "^6.26.0",
+    "bip39": "^3.0.2",
+    "bitcoin-core": "^2.0.0",
+    "bitcoinjs-lib": "^5.0.5",
     "bluebird": "^3.5.5",
     "body-parser": "~1.0.0",
     "cluster": "^0.7.7",
     "connect-timeout": "^1.9.0",
     "cookie-parser": "~1.0.1",
     "cors": "^2.8.5",
+    "create-hash": "^1.2.0",
     "debug": "~0.7.4",
     "express": "~4.2.0",
+    "hdkey": "^1.1.1",
     "isomorphic-fetch": "^2.2.1",
     "jsonminify": "0.2.3",
     "markdown-js": "0.0.3",
@@ -23,7 +28,8 @@
     "mongoose": "^5.5.12",
     "p-iteration": "^1.1.8",
     "qr-image": "~2.0.0",
-    "request": "2.74.0"
+    "request": "2.74.0",
+    "wif": "^2.0.6"
   },
   "devDependencies": {
     "jasmine": "~2.1.0"
